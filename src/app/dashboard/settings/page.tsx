@@ -1,6 +1,6 @@
 import React from 'react'
 import { createClient } from '@/lib/supabase'
-import { PLANS } from '@/lib/stripe'
+import { PADDLE_PLANS } from '@/lib/paddle'
 import { redirect } from 'next/navigation'
 import SettingsClient from './SettingsClient'
 
@@ -31,7 +31,7 @@ export default async function SettingsPage() {
   }
 
   const planId = profile.plan || 'free'
-  const planConfig = PLANS[planId]
+  const planConfig = PADDLE_PLANS[planId]
   const limit = planConfig ? planConfig.messagesLimit : 50
   const limitDisplay = limit === Infinity ? 'Unlimited' : limit
   const count = profile.messages_sent_this_month || 0

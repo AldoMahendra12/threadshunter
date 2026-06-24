@@ -1,6 +1,6 @@
 import React from 'react'
 import { createClient } from '@/lib/supabase'
-import { PLANS } from '@/lib/stripe'
+import { PADDLE_PLANS } from '@/lib/paddle'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
@@ -42,7 +42,7 @@ export default async function NewPostPage() {
   }
 
   const userPlan = profile.plan || 'free'
-  const planConfig = PLANS[userPlan]
+  const planConfig = PADDLE_PLANS[userPlan]
   const postsLimit = planConfig ? planConfig.postsLimit : 1
   const limitExceeded = currentCount >= postsLimit
 

@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react'
 import { supabaseBrowser } from '@/lib/supabaseBrowser'
-import { PLANS } from '@/lib/stripe'
+import { PADDLE_PLANS } from '@/lib/paddle'
 import { 
   Tv, 
   Sparkles, 
@@ -558,7 +558,7 @@ export default function LandingPage() {
               <p className="text-gray-400 text-xs mt-3">Great for trying out automation features.</p>
               
               <ul className="mt-8 space-y-3.5 text-xs text-gray-300">
-                {PLANS.free.features.map((f, i) => (
+                {PADDLE_PLANS.free.features.map((f, i) => (
                   <li key={i} className="flex items-center space-x-2">
                     <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
                     <span>{f}</span>
@@ -593,7 +593,7 @@ export default function LandingPage() {
               <p className="text-gray-400 text-xs mt-3">Essential social integrations for growing accounts.</p>
 
               <ul className="mt-8 space-y-3.5 text-xs text-gray-300">
-                {PLANS.starter.features.map((f, i) => (
+                {PADDLE_PLANS.starter.features.map((f, i) => (
                   <li key={i} className="flex items-center space-x-2">
                     <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
                     <span>{f}</span>
@@ -603,7 +603,7 @@ export default function LandingPage() {
             </div>
 
             <Link
-              href="/api/stripe/create-checkout?plan=starter"
+              href="/api/paddle/create-checkout?plan=starter"
               className="mt-8 w-full block text-center bg-[#7C3AED] hover:bg-purple-600 text-white py-3 rounded-xl text-xs font-bold transition"
             >
               Get Starter
@@ -631,7 +631,7 @@ export default function LandingPage() {
               <p className="text-gray-400 text-xs mt-3">Complete tracking, analytics, and self-optimization loop.</p>
 
               <ul className="mt-8 space-y-3.5 text-xs text-gray-300">
-                {PLANS.pro.features.map((f, i) => (
+                {PADDLE_PLANS.pro.features.map((f, i) => (
                   <li key={i} className="flex items-center space-x-2">
                     <CheckCircle2 className="w-4 h-4 text-[#7C3AED] shrink-0" />
                     <span>{f}</span>
@@ -641,7 +641,7 @@ export default function LandingPage() {
             </div>
 
             <Link
-              href="/api/stripe/create-checkout?plan=pro"
+              href="/api/paddle/create-checkout?plan=pro"
               className="mt-8 w-full block text-center bg-[#7C3AED] hover:bg-purple-600 text-white py-3 rounded-xl text-xs font-bold transition shadow-lg shadow-purple-950/25"
             >
               Get Pro
@@ -666,7 +666,7 @@ export default function LandingPage() {
               <p className="text-gray-400 text-xs mt-3">Unlimited actions, agency features, and team seats.</p>
 
               <ul className="mt-8 space-y-3.5 text-xs text-gray-300">
-                {PLANS.scale.features.map((f, i) => (
+                {PADDLE_PLANS.scale.features.map((f, i) => (
                   <li key={i} className="flex items-center space-x-2">
                     <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
                     <span>{f}</span>
@@ -676,7 +676,7 @@ export default function LandingPage() {
             </div>
 
             <Link
-              href="/api/stripe/create-checkout?plan=scale"
+              href="/api/paddle/create-checkout?plan=scale"
               className="mt-8 w-full block text-center bg-[#202433] hover:bg-[#282d3f] border border-[#2D3148] text-white py-3 rounded-xl text-xs font-bold transition"
             >
               Get Scale

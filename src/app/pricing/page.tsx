@@ -1,6 +1,6 @@
 import React from 'react'
 import { createClient } from '@/lib/supabase'
-import { PLANS } from '@/lib/stripe'
+import { PADDLE_PLANS } from '@/lib/paddle'
 import { CheckCircle2, Zap, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 
@@ -59,13 +59,13 @@ export default async function PricingPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-stretch">
-          {Object.values(PLANS).map((plan) => {
+          {Object.values(PADDLE_PLANS).map((plan) => {
             const isCurrent = isLoggedIn && userPlan === plan.id
             const isFree = plan.id === 'free'
             const hasPaidPlan = isLoggedIn && userPlan !== 'free'
 
             let ctaText = 'Get Started'
-            let ctaHref = `/api/stripe/create-checkout?plan=${plan.id}`
+            let ctaHref = `/api/paddle/create-checkout?plan=${plan.id}`
 
             if (isCurrent) {
               ctaText = 'Your Current Plan'
@@ -73,7 +73,7 @@ export default async function PricingPage() {
             } else if (hasPaidPlan) {
               // If on a paid plan, direct users to billing portal
               ctaText = 'Manage Subscription'
-              ctaHref = '/api/stripe/create-portal'
+              ctaHref = '/api/paddle/create-portal'
             } else if (isFree) {
               ctaText = 'Sign Up Free'
               ctaHref = '/dashboard'

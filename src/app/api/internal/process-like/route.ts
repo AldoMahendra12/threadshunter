@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { PLANS } from '@/lib/stripe'
+import { PADDLE_PLANS } from '@/lib/paddle'
 
 export async function POST(req: NextRequest) {
   // 1. Verify INTERNAL_API_SECRET header
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
     }
 
     const userPlan = profile.plan || 'free'
-    const planConfig = PLANS[userPlan]
+    const planConfig = PADDLE_PLANS[userPlan]
     const monthlyLimit = planConfig ? planConfig.messagesLimit : 50
 
     // Check user plan message limits

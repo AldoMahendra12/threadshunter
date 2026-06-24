@@ -126,7 +126,7 @@ export default function SettingsClient({
         )}
       </div>
 
-      {/* Stripe Actions Card */}
+      {/* Billing Actions Card */}
       <div className="bg-[#1A1D27] border border-[#2D3148] rounded-2xl p-6 shadow-xl">
         <h3 className="text-lg font-bold text-white mb-4">Billing and Portal Management</h3>
         <p className="text-xs text-gray-400 mb-6 leading-relaxed">
@@ -134,11 +134,11 @@ export default function SettingsClient({
         </p>
 
         <Link
-          href="/api/stripe/create-portal"
+          href="/api/paddle/create-portal"
           className="inline-flex items-center space-x-2 bg-[#7C3AED] hover:bg-purple-600 text-white text-xs font-bold px-4.5 py-3 rounded-xl transition shadow shadow-purple-900/30"
         >
           <CreditCard className="w-4 h-4" />
-          <span>Manage Stripe Billing</span>
+          <span>Manage Billing & Subscriptions</span>
         </Link>
       </div>
     </div>
