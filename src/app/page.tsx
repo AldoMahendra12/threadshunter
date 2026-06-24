@@ -143,9 +143,7 @@ export default function LandingPage() {
         provider: 'facebook', // Facebook handles Meta OAuth scopes
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
-          queryParams: {
-            scopes: 'instagram_basic,instagram_manage_messages,threads_basic,threads_content_publish'
-          }
+          scopes: 'public_profile instagram_basic instagram_manage_messages'
         }
       })
       if (error) throw error
