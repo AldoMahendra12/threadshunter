@@ -36,7 +36,7 @@ export default async function DashboardLayout({ children }: LayoutProps) {
   return (
     <div className="min-h-screen bg-[#0F1117] text-gray-100 flex flex-col md:flex-row relative">
       <Sidebar userEmail={user.email} fullName={profile?.full_name || ''} />
-      <main className="flex-1 p-6 md:p-10 overflow-y-auto max-h-screen">
+      <main className="flex-1 min-w-0 p-6 md:p-10 overflow-y-auto max-h-screen">
         {children}
       </main>
     </div>
