@@ -48,21 +48,10 @@ export default function SettingsClient({
     }
   }
 
-  const handleReconnect = async () => {
+  const handleReconnect = () => {
     setLoading(true)
-    try {
-      const { error } = await supabaseBrowser.auth.signInWithOAuth({
-        provider: 'facebook',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-          scopes: 'public_profile threads_basic threads_content_publish threads_manage_replies'
-        }
-      })
-      if (error) throw error
-    } catch (err: any) {
-      alert(`Connection failed: ${err.message || err}`)
-      setLoading(false)
-    }
+    // Redirect manually to our custom Threads OAuth flow
+    window.location.href = '/api/auth/threads'
   }
 
   return (
@@ -110,7 +99,7 @@ export default function SettingsClient({
         ) : (
           <div className="space-y-4">
             <div className="p-4 rounded-xl bg-[#131620] border border-[#2D3148] text-xs text-gray-400">
-              No Meta accounts connected. Connect your Facebook Page that holds ownership of your Instagram Creator and Threads accounts to launch outbound leads automation.
+              No Threads account connected. Connect your Threads Creator account to launch outbound leads automation.
             </div>
             <button
               onClick={handleReconnect}
@@ -118,7 +107,7 @@ export default function SettingsClient({
               className="inline-flex items-center space-x-2 bg-[#7C3AED] hover:bg-purple-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition shadow shadow-purple-900/30 disabled:opacity-50"
             >
               <Sparkles className="w-4 h-4" />
-              <span>Connect Meta Account</span>
+              <span>Connect Threads Account</span>
             </button>
           </div>
         )}

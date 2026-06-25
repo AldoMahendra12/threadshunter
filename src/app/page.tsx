@@ -143,7 +143,7 @@ export default function LandingPage() {
         provider: 'facebook', // Facebook handles Meta OAuth scopes
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
-          scopes: 'public_profile threads_basic threads_content_publish threads_manage_replies'
+          scopes: 'public_profile'
         }
       })
       if (error) throw error
