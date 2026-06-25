@@ -69,8 +69,8 @@ const steps: CardItem[] = [
   {
     id: 1,
     step: "01",
-    title: "Connect Meta API",
-    content: "Log in with Facebook OAuth to securely authorize your connected Instagram Creator and Threads channels. We import your credentials into a secured profiles record."
+    title: "Sign In & Link Threads",
+    content: "Log in with Google to create your account, then securely authorize your Threads channels via the dashboard using standard Meta OAuth."
   },
   {
     id: 2,
@@ -136,14 +136,13 @@ export default function LandingPage() {
     { name: 'Pricing', link: '#pricing' },
   ]
 
-  const handleMetaLogin = async () => {
+  const handleGoogleLogin = async () => {
     setLoading(true)
     try {
       const { error } = await supabaseBrowser.auth.signInWithOAuth({
-        provider: 'facebook', // Facebook handles Meta OAuth scopes
+        provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-          scopes: 'public_profile'
+          redirectTo: `${window.location.origin}/auth/callback`
         }
       })
       if (error) throw error
@@ -156,11 +155,11 @@ export default function LandingPage() {
   // Timeline Content Definition
   const timelineData = [
     {
-      title: "Connect Meta",
+      title: "Connect Threads",
       content: (
         <div>
           <p className="text-gray-300 text-sm md:text-lg font-normal mb-8 leading-relaxed max-w-xl">
-            Log in with Facebook OAuth to securely authorize your connected Instagram Creator and Threads channels. We import your credentials into a secured profiles record.
+            Log in to the dashboard, click "Connect Threads", and securely authorize your Threads channels via standard Meta OAuth. We link your credentials to your secure profile.
           </p>
           <div className="rounded-2xl p-6 bg-[#131620] border border-[#2D3148] shadow-2xl relative overflow-hidden group">
             <div className="absolute inset-0 bg-gradient-to-tr from-[#7C3AED]/10 to-transparent opacity-0 group-hover:opacity-100 transition duration-500" />
@@ -173,7 +172,7 @@ export default function LandingPage() {
                 </div>
               </div>
               <div>
-                <h4 className="text-white font-bold text-lg">Meta Authorization</h4>
+                <h4 className="text-white font-bold text-lg">Threads Connection</h4>
                 <p className="text-emerald-400 text-sm font-medium flex items-center mt-1">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 mr-2 animate-pulse" /> Connected successfully
                 </p>
@@ -280,11 +279,11 @@ export default function LandingPage() {
           <NavbarLogo />
           <NavItems items={navItems} />
           <div className="flex items-center gap-3">
-            <NavbarButton variant="secondary" as="button" onClick={handleMetaLogin}>
+            <NavbarButton variant="secondary" as="button" onClick={handleGoogleLogin}>
               Sign In
             </NavbarButton>
-            <NavbarButton variant="primary" as="button" onClick={handleMetaLogin}>
-              {loading ? 'Connecting...' : 'Connect Meta'}
+            <NavbarButton variant="primary" as="button" onClick={handleGoogleLogin}>
+              {loading ? 'Signing In...' : 'Get Started'}
             </NavbarButton>
           </div>
         </NavBody>
@@ -311,11 +310,11 @@ export default function LandingPage() {
               </a>
             ))}
             <div className="flex w-full flex-col gap-3 pt-2">
-              <NavbarButton variant="secondary" as="button" onClick={handleMetaLogin} className="w-full">
+              <NavbarButton variant="secondary" as="button" onClick={handleGoogleLogin} className="w-full">
                 Sign In
               </NavbarButton>
-              <NavbarButton variant="primary" as="button" onClick={handleMetaLogin} className="w-full">
-                {loading ? 'Connecting...' : 'Connect Meta'}
+              <NavbarButton variant="primary" as="button" onClick={handleGoogleLogin} className="w-full">
+                {loading ? 'Signing In...' : 'Get Started'}
               </NavbarButton>
             </div>
           </MobileNavMenu>
@@ -368,7 +367,7 @@ export default function LandingPage() {
             variants={itemVariants}
             className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-6 pt-4"
           >
-            <MovingBorderButton onClick={handleMetaLogin} disabled={loading} className="w-full sm:w-auto">
+            <MovingBorderButton onClick={handleGoogleLogin} disabled={loading} className="w-full sm:w-auto">
               <span>{loading ? 'Starting...' : 'Start Free Trial'}</span>
               <ArrowRight className="w-5 h-5" />
             </MovingBorderButton>
@@ -566,7 +565,7 @@ export default function LandingPage() {
             </div>
             
             <button
-              onClick={handleMetaLogin}
+              onClick={handleGoogleLogin}
               className="mt-8 w-full bg-[#202433] hover:bg-[#282d3f] border border-[#2D3148] text-white py-3 rounded-xl text-xs font-bold transition"
             >
               Sign Up Free
