@@ -72,14 +72,12 @@ export async function POST(req: NextRequest) {
     if (profile.meta_access_token) {
       try {
         const threadsRes = await fetch(
-          `https://graph.threads.net/v1.0/${likerThreadsId}?fields=id,username,biography,followers_count,threads_count&access_token=${profile.meta_access_token}`
+          `https://graph.threads.net/v1.0/${likerThreadsId}?fields=id,username,biography&access_token=${profile.meta_access_token}`
         )
         if (threadsRes.ok) {
           const threadsData = await threadsRes.json()
           likerUsername = threadsData.username || likerUsername
           likerBio = threadsData.biography || ''
-          likerFollowers = threadsData.followers_count || 0
-          likerThreadsCount = threadsData.threads_count || 0
         }
       } catch (err) {
         console.error('Failed to fetch Threads profile details, using defaults:', err)
@@ -95,7 +93,7 @@ export async function POST(req: NextRequest) {
         // For standard setup, we can default to likerThreadsId if connected or check if there is an instagram id.
         // We'll search if Meta returns it. Often Instagram and Threads IDs are linked.
         const igRes = await fetch(
-          `https://graph.instagram.com/v21.0/${likerThreadsId}?fields=id,username,biography,followers_count&access_token=${profile.meta_access_token}`
+          `https://graph.instagram.com/v21.0/${likerThreadsId}?fields=id,username,biography&access_token=${profile.meta_access_token}`
         )
         if (igRes.ok) {
           const igData = await igRes.json()

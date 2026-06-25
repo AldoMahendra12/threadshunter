@@ -55,7 +55,7 @@ export default function SettingsClient({
         provider: 'facebook',
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
-          scopes: 'public_profile instagram_basic instagram_manage_messages'
+          scopes: 'public_profile threads_basic threads_content_publish threads_manage_replies'
         }
       })
       if (error) throw error

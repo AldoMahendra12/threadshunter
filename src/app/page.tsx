@@ -143,7 +143,7 @@ export default function LandingPage() {
         provider: 'facebook', // Facebook handles Meta OAuth scopes
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
-          scopes: 'public_profile instagram_basic instagram_manage_messages'
+          scopes: 'public_profile threads_basic threads_content_publish threads_manage_replies'
         }
       })
       if (error) throw error
@@ -791,8 +791,8 @@ export default function LandingPage() {
           <div className="space-y-4">
             <h4 className="text-xs font-bold text-white uppercase tracking-wider">Company</h4>
             <ul className="space-y-2 text-xs">
-              <li><a href="#" className="hover:text-white transition font-medium">Terms of Service</a></li>
-              <li><a href="#" className="hover:text-white transition font-medium">Privacy Policy</a></li>
+              <li><Link href="/terms" className="hover:text-white transition font-medium">Terms of Service</Link></li>
+              <li><Link href="/privacy" className="hover:text-white transition font-medium">Privacy Policy</Link></li>
               <li><a href="#" className="hover:text-white transition font-medium">Cookie Preferences</a></li>
               <li><a href="#" className="hover:text-white transition font-medium">Contact Support</a></li>
             </ul>
@@ -802,8 +802,8 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-6 pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-gray-600 gap-4">
           <p>© 2026 Threads Hunter Inc. All rights reserved.</p>
           <div className="flex space-x-6">
-            <a href="#" className="hover:text-gray-400 transition font-medium">Terms</a>
-            <a href="#" className="hover:text-gray-400 transition font-medium">Privacy</a>
+            <Link href="/terms" className="hover:text-gray-400 transition font-medium">Terms</Link>
+            <Link href="/privacy" className="hover:text-gray-400 transition font-medium">Privacy</Link>
             <a href="#" className="hover:text-gray-400 transition font-medium">Cookies</a>
           </div>
         </div>

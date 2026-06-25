@@ -11,6 +11,7 @@ import {
   ExternalLink 
 } from 'lucide-react'
 import PostActiveToggleClient from './PostActiveToggleClient'
+import DeletePostButtonClient from './DeletePostButtonClient'
 
 export const dynamic = 'force-dynamic'
 
@@ -201,13 +202,7 @@ export default async function DashboardOverview() {
                         </div>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <Link
-                          href={`/dashboard/posts/${post.id}`}
-                          className="inline-flex items-center space-x-1.5 text-xs font-bold text-[#7C3AED] hover:text-purple-400 transition"
-                        >
-                          <span>Details</span>
-                          <ExternalLink className="w-3.5 h-3.5" />
-                        </Link>
+                        <DeletePostButtonClient postId={post.id} />
                       </td>
                     </tr>
                   )
