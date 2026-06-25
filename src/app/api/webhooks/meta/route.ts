@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 })
   }
 
-  // Parse webhook like fields
+  // Parse webhook fields
   let threads_post_id = ''
   let liker_threads_id = ''
   let event_type = 'like'
@@ -63,7 +63,11 @@ export async function POST(req: NextRequest) {
     for (const entry of payload.entry) {
       if (entry.changes && Array.isArray(entry.changes)) {
         for (const change of entry.changes) {
-          if (change.field === 'likes' || change.field === 'comments') {
+          if (change.field === 'replies') {
+            threads_post_id = change.value?.parent_id || ''
+            liker_threads_id = change.value?.from?.id || ''
+            event_type = 'reply'
+          } else if (change.field === 'likes' || change.field === 'comments') {
             threads_post_id = change.value?.media_id || change.value?.id || ''
             liker_threads_id = change.value?.from?.id || ''
             event_type = change.field
