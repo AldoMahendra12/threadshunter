@@ -21,6 +21,26 @@ export default function SettingsClient({
   const [loading, setLoading] = useState(false)
   const [connected, setConnected] = useState(isMetaConnected)
 
+  const isBypass = process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_BYPASS_PAYMENT === 'true'
+
+  const handleSetPlan = async (targetPlan: 'free' | 'starter' | 'pro' | 'scale') => {
+    setLoading(true)
+    try {
+      const { error } = await supabaseBrowser
+        .from('profiles')
+        .update({ plan: targetPlan })
+        .eq('id', profileId)
+
+      if (error) throw error
+      alert(`Plan updated to ${targetPlan} successfully!`)
+      window.location.reload()
+    } catch (err: any) {
+      alert(`Failed to update plan: ${err.message || err}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const handleDisconnect = async () => {
     if (!confirm('Are you sure you want to disconnect your Meta account? Automation will stop working.')) {
       return
@@ -112,6 +132,32 @@ export default function SettingsClient({
           </div>
         )}
       </div>
+
+      {/* Dev Plan Switcher (Only visible in dev or when bypass enabled) */}
+      {isBypass && (
+        <div className="bg-[#1A1D27] border border-orange-500/30 rounded-2xl p-6 shadow-xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 bg-orange-500/20 text-orange-400 text-[9px] font-bold px-2 py-0.5 rounded-bl uppercase">
+            Development Tool
+          </div>
+          <h3 className="text-lg font-bold text-white mb-2">Dev Tool: Plan Bypass Selector</h3>
+          <p className="text-xs text-gray-400 mb-6 leading-relaxed">
+            Instantly switch plans to test starter/pro/scale features and bypass Paddle checks.
+          </p>
+
+          <div className="flex flex-wrap gap-3">
+            {(['free', 'starter', 'pro', 'scale'] as const).map((p) => (
+              <button
+                key={p}
+                onClick={() => handleSetPlan(p)}
+                disabled={loading}
+                className="bg-[#202433] hover:bg-[#282d3f] border border-[#2D3148] text-white text-xs font-bold px-4 py-2.5 rounded-xl transition disabled:opacity-50 capitalize"
+              >
+                Set {p} Plan
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Billing Actions Card */}
       <div className="bg-[#1A1D27] border border-[#2D3148] rounded-2xl p-6 shadow-xl">
