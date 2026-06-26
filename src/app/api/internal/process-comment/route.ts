@@ -139,7 +139,9 @@ export async function POST(req: NextRequest) {
     }
 
     // 1. Generate BOTH messages from Claude API (one call, two outputs)
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const host = req.headers.get('host') || 'localhost:3000'
+    const protocol = host.includes('localhost') ? 'http' : 'https'
+    const appUrl = `${protocol}://${host}`
     const internalSecret = process.env.INTERNAL_API_SECRET || ''
 
     const genRes = await fetch(`${appUrl}/api/internal/generate-message`, {

@@ -167,12 +167,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, message: 'Skipped: duplicate comment' })
   }
 
-  // 6. Trigger /api/internal/process-comment asynchronously
-  const processUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/internal/process-comment`
+  // 6. Trigger /api/internal/process-comment
+  const host = req.headers.get('host') || 'localhost:3000'
+  const protocol = host.includes('localhost') ? 'http' : 'https'
+  const appUrl = `${protocol}://${host}`
+  const processUrl = `${appUrl}/api/internal/process-comment`
   const internalSecret = process.env.INTERNAL_API_SECRET || ''
 
   try {
-    fetch(processUrl, {
+    // Await the fetch to ensure Vercel serverless context executes it fully
+    await fetch(processUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -186,13 +190,10 @@ export async function POST(req: NextRequest) {
         userId: postRow.user_id,
         commentId: comment_id,
         commentText: comment_text
-      }),
-      signal: AbortSignal.timeout(1), // Abort immediately to run asynchronously
-    }).catch(() => {
-      // Catch aborted request errors silently
+      })
     })
   } catch (err) {
-    // Catch fetch parse/init errors
+    console.error('Failed to trigger process-comment:', err)
   }
 
   // 7. Return 200 OK within 5 seconds
