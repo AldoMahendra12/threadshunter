@@ -19,6 +19,9 @@ export default function NewPostFormClient({ userPlan, metaAccessToken }: FormPro
   const [channel, setChannel] = useState<'threads_reply' | 'instagram_dm' | 'both'>('both')
   const [loading, setLoading] = useState(false)
 
+  const isBypass = process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_BYPASS_PAYMENT === 'true'
+  const effectivePlan = isBypass ? 'scale' : userPlan
+
   // Helper to extract post ID from Threads URL
   const extractThreadsPostId = (urlInput: string): string => {
     try {
@@ -77,7 +80,7 @@ export default function NewPostFormClient({ userPlan, metaAccessToken }: FormPro
           goal,
           custom_goal_text: goal === 'custom' ? customGoalText : null,
           cta_link: ctaLink.trim(),
-          channel: userPlan === 'free' ? 'threads_reply' : channel, // Enforce reply-only for free tier
+          channel: effectivePlan === 'free' ? 'threads_reply' : channel, // Enforce reply-only for free tier
           is_active: true
         })
 
@@ -167,7 +170,7 @@ export default function NewPostFormClient({ userPlan, metaAccessToken }: FormPro
         <label htmlFor="channel" className="block text-xs font-bold text-gray-400 uppercase mb-2">
           Outreach Channels
         </label>
-        {userPlan === 'free' ? (
+        {effectivePlan === 'free' ? (
           <div className="p-3 rounded-xl bg-gray-500/5 border border-[#2D3148] text-xs text-gray-400">
             Your current plan limits you to <span className="text-white font-semibold">Threads comment replies only</span>. Upgrade to access Instagram DMs.
           </div>

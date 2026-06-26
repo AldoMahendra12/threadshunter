@@ -44,7 +44,8 @@ export default async function NewPostPage() {
   const userPlan = profile.plan || 'free'
   const planConfig = PADDLE_PLANS[userPlan]
   const postsLimit = planConfig ? planConfig.postsLimit : 1
-  const limitExceeded = currentCount >= postsLimit
+  const isBypass = process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_BYPASS_PAYMENT === 'true'
+  const limitExceeded = isBypass ? false : currentCount >= postsLimit
 
   return (
     <div className="max-w-xl mx-auto space-y-6">

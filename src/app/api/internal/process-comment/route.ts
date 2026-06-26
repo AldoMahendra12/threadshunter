@@ -45,7 +45,8 @@ export async function POST(req: NextRequest) {
       throw new Error(`Profile not found: ${profileError?.message}`)
     }
 
-    const userPlan = profile.plan || 'free'
+    const isBypass = process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_BYPASS_PAYMENT === 'true'
+    const userPlan = isBypass ? 'scale' : (profile.plan || 'free')
     const planConfig = PADDLE_PLANS[userPlan]
     const monthlyLimit = planConfig ? planConfig.messagesLimit : 50
 
