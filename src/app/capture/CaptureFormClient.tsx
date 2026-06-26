@@ -21,7 +21,7 @@ export default function CaptureFormClient({ refId, postId }: CaptureFormProps) {
 
     setLoading(true)
     try {
-      const res = await fetch('/api/capture/submit', {
+      const res = await fetch('/api/capture-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refId, postId, email, whatsapp })
@@ -41,10 +41,10 @@ export default function CaptureFormClient({ refId, postId }: CaptureFormProps) {
         origin: { y: 0.7 }
       })
 
-      // Redirect after 1.2 seconds
+      // Redirect after 2 seconds
       setTimeout(() => {
         window.location.href = data.redirectUrl || '/'
-      }, 1200)
+      }, 2000)
 
     } catch (err: any) {
       alert(`Submission failed: ${err.message || err}`)
@@ -70,7 +70,7 @@ export default function CaptureFormClient({ refId, postId }: CaptureFormProps) {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
         <label htmlFor="email" className="block text-xs font-bold text-gray-400 uppercase mb-2">
-          Email Address <span className="text-red-500">*</span>
+          Your email address <span className="text-red-500">*</span>
         </label>
         <input
           type="email"
@@ -85,7 +85,7 @@ export default function CaptureFormClient({ refId, postId }: CaptureFormProps) {
 
       <div>
         <label htmlFor="whatsapp" className="block text-xs font-bold text-gray-400 uppercase mb-2">
-          WhatsApp Number (Optional)
+          WhatsApp (optional)
         </label>
         <input
           type="tel"
@@ -103,7 +103,7 @@ export default function CaptureFormClient({ refId, postId }: CaptureFormProps) {
         className="w-full mt-4 bg-gradient-to-r from-[#7C3AED] to-purple-600 hover:from-[#6D28D9] hover:to-purple-700 text-white font-bold py-3.5 rounded-xl transition text-sm flex items-center justify-center space-x-2 border border-purple-500/20 disabled:opacity-50"
       >
         <Sparkles className="w-4 h-4" />
-        <span>{loading ? 'Verifying...' : 'Access Resource'}</span>
+        <span>{loading ? 'Verifying...' : 'Get it now →'}</span>
       </button>
     </form>
   )

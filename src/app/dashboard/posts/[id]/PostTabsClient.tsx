@@ -102,15 +102,15 @@ export default function PostTabsClient({ post, likers, versions, leads }: PostTa
           {likers.length === 0 ? (
             <div className="text-center py-16 text-gray-500 text-sm">No comments recorded yet.</div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto font-sans">
               <table className="w-full text-left border-collapse text-sm">
                 <thead>
                   <tr className="border-b border-[#2D3148] text-xs font-bold text-gray-400 uppercase bg-[#141721]/50">
-                    <th className="px-6 py-4">Commenter Profile</th>
-                    <th className="px-6 py-4">Comment Text</th>
-                    <th className="px-6 py-4 text-center">Public Reply</th>
+                    <th className="px-6 py-4">Username</th>
+                    <th className="px-6 py-4">Comment</th>
+                    <th className="px-6 py-4 text-center">Threads Reply</th>
                     <th className="px-6 py-4 text-center">Instagram DM</th>
-                    <th className="px-6 py-4 text-center">Clicked</th>
+                    <th className="px-6 py-4 text-center">Email Captured</th>
                     <th className="px-6 py-4 text-center">Converted</th>
                   </tr>
                 </thead>
@@ -120,7 +120,8 @@ export default function PostTabsClient({ post, likers, versions, leads }: PostTa
                     const commentSent = liker.public_reply_sent || messageLogs.some((m: any) => m.channel === 'threads_reply' || m.channel === 'threads_comment')
                     const dmSent = liker.instagram_dm_sent || messageLogs.some((m: any) => m.channel === 'instagram_dm')
                     const wasClicked = messageLogs.some((m: any) => m.was_clicked)
-                    const wasConverted = messageLogs.some((m: any) => m.was_converted)
+                    const wasConverted = liker.was_converted || messageLogs.some((m: any) => m.was_converted)
+                    const capturedEmail = liker.leads?.[0]?.email
 
                     const isReplyEnabled = post.channel === 'both' || post.channel === 'threads_reply'
                     const isDmEnabled = post.channel === 'both' || post.channel === 'instagram_dm'
@@ -146,7 +147,7 @@ export default function PostTabsClient({ post, likers, versions, leads }: PostTa
                             <span className={`inline-flex px-2.5 py-0.5 rounded text-[10px] font-bold ${
                               commentSent ? 'bg-blue-500/10 text-blue-400' : 'bg-gray-700/30 text-gray-500'
                             }`}>
-                              {commentSent ? '✅ Sent' : '⏳ Pending'}
+                              {commentSent ? '✅' : '⏳'}
                             </span>
                           ) : (
                             <span className="text-gray-600 text-xs italic">-</span>
@@ -157,24 +158,25 @@ export default function PostTabsClient({ post, likers, versions, leads }: PostTa
                             <span className={`inline-flex px-2.5 py-0.5 rounded text-[10px] font-bold ${
                               dmSent ? 'bg-pink-500/10 text-pink-400' : 'bg-gray-700/30 text-gray-500'
                             }`}>
-                              {dmSent ? '✅ Sent' : '⏳ Pending'}
+                              {dmSent ? '✅' : '⏳'}
                             </span>
                           ) : (
                             <span className="text-gray-600 text-xs italic">-</span>
                           )}
                         </td>
                         <td className="px-6 py-4 text-center">
-                          <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold ${
-                            wasClicked ? 'bg-green-500/10 text-green-400' : 'bg-gray-700/30 text-gray-500'
-                          }`}>
-                            {wasClicked ? 'YES' : 'NO'}
-                          </span>
+                          {capturedEmail ? (
+                            <div className="inline-flex items-center space-x-1.5 justify-center">
+                              <span className="text-green-400 font-bold">✅</span>
+                              <span className="text-xs text-gray-300 font-mono">{capturedEmail}</span>
+                            </div>
+                          ) : (
+                            <span className="text-red-400 font-bold">❌</span>
+                          )}
                         </td>
                         <td className="px-6 py-4 text-center">
-                          <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold ${
-                            wasConverted ? 'bg-[#7C3AED]/20 text-[#9F67FF]' : 'bg-gray-700/30 text-gray-500'
-                          }`}>
-                            {wasConverted ? 'YES' : 'NO'}
+                          <span className="text-lg font-bold">
+                            {wasConverted ? '✅' : '❌'}
                           </span>
                         </td>
                       </tr>

@@ -9,7 +9,8 @@ import {
   Users, 
   ArrowRight, 
   ExternalLink,
-  MessageSquare
+  MessageSquare,
+  Mail
 } from 'lucide-react'
 import PostActiveToggleClient from './PostActiveToggleClient'
 
@@ -26,6 +27,7 @@ export default async function DashboardOverview() {
   let totalClicked = 0
   let totalReplies = 0
   let totalDms = 0
+  let totalEmailsCaptured = 0
 
   try {
     const { data: { user: authUser } } = await supabase.auth.getUser()
@@ -74,6 +76,15 @@ export default async function DashboardOverview() {
       .eq('channel', 'instagram_dm')
 
     totalDms = dmCount || 0
+
+    // Fetch emails captured count (count of leads with email not null)
+    const { count: emailCapturedCount } = await supabase
+      .from('leads')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .not('email', 'is', null)
+
+    totalEmailsCaptured = emailCapturedCount || 0
   } catch (err) {
     console.error('Failed to load dashboard overview data:', err)
   }
@@ -98,7 +109,7 @@ export default async function DashboardOverview() {
       </div>
 
       {/* Metrics Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
         {/* Metric 1 */}
         <div className="p-5 rounded-2xl bg-[#1A1D27] border border-[#2D3148] flex items-center space-x-3.5">
           <div className="w-11 h-11 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400 shrink-0">
@@ -151,6 +162,17 @@ export default async function DashboardOverview() {
           <div>
             <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block">Leads Captured</span>
             <span className="text-xl font-bold text-white mt-0.5 block">{totalLeads}</span>
+          </div>
+        </div>
+
+        {/* Metric 6 */}
+        <div className="p-5 rounded-2xl bg-[#1A1D27] border border-[#2D3148] flex items-center space-x-3.5">
+          <div className="w-11 h-11 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 shrink-0">
+            <Mail className="w-5.5 h-5.5" />
+          </div>
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block">Emails Captured</span>
+            <span className="text-xl font-bold text-white mt-0.5 block">{totalEmailsCaptured}</span>
           </div>
         </div>
       </div>

@@ -39,10 +39,10 @@ export default async function PostDetailPage({ params }: PageProps) {
     }
     post = monitoredPost
 
-    // Fetch likers with messages sent
+    // Fetch likers with messages sent and captured leads
     const { data: likersData } = await supabase
       .from('likers')
-      .select('*, messages_sent(*)')
+      .select('*, messages_sent(*), leads(*)')
       .eq('post_id', id)
       .order('liked_at', { ascending: false })
 

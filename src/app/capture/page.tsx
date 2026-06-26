@@ -17,10 +17,10 @@ export default async function CapturePage({ searchParams }: PageProps) {
 
   if (!refId || !postId) {
     return (
-      <div className="min-h-screen bg-[#0F1117] flex items-center justify-center text-gray-400">
-        <div className="text-center p-6 border border-[#2D3148] bg-[#1A1D27] rounded-xl max-w-sm">
-          <h2 className="text-lg font-bold text-white mb-2">Invalid Lead Link</h2>
-          <p className="text-sm">This link appears to be broken. Please check the URL and try again.</p>
+      <div className="min-h-screen bg-[#0F1117] flex items-center justify-center text-gray-400 font-sans">
+        <div className="text-center p-6 border border-[#2D3148] bg-[#1A1D27] rounded-2xl max-w-sm shadow-xl">
+          <h2 className="text-lg font-bold text-white mb-2">Invalid Link</h2>
+          <p className="text-sm text-gray-400">This referral link appears to be broken or incomplete.</p>
         </div>
       </div>
     )
@@ -41,10 +41,10 @@ export default async function CapturePage({ searchParams }: PageProps) {
 
   if (postErr || likerErr || !post || !liker) {
     return (
-      <div className="min-h-screen bg-[#0F1117] flex items-center justify-center text-gray-400">
-        <div className="text-center p-6 border border-[#2D3148] bg-[#1A1D27] rounded-xl max-w-sm">
-          <h2 className="text-lg font-bold text-white mb-2">Invalid Link</h2>
-          <p className="text-sm">We couldn't verify this reward link in our database.</p>
+      <div className="min-h-screen bg-[#0F1117] flex items-center justify-center text-gray-400 font-sans">
+        <div className="text-center p-6 border border-[#2D3148] bg-[#1A1D27] rounded-2xl max-w-sm shadow-xl">
+          <h2 className="text-lg font-bold text-white mb-2">Verification Failed</h2>
+          <p className="text-sm text-gray-400">We couldn't verify this gift link in our database.</p>
         </div>
       </div>
     )
@@ -87,26 +87,40 @@ export default async function CapturePage({ searchParams }: PageProps) {
 
   const ownerName = post.profiles?.full_name || 'Creator'
 
-  return (
-    <div className="min-h-screen bg-[#0F1117] text-gray-100 flex items-center justify-center px-4 relative overflow-hidden py-16">
-      {/* Glow Effects */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[350px] h-[350px] bg-[#7C3AED] opacity-[0.06] rounded-full blur-[100px] pointer-events-none" />
+  // Resolve goal-based headline
+  let goalHeadline = 'Your special gift is ready'
+  if (post.goal === 'freebie') {
+    goalHeadline = 'Your free resource is ready'
+  } else if (post.goal === 'subscribe') {
+    goalHeadline = 'Join other getting exclusive updates'
+  } else if (post.goal === 'book_call') {
+    goalHeadline = 'Your free call is one step away'
+  } else if (post.goal === 'custom' && post.custom_goal_text) {
+    goalHeadline = post.custom_goal_text
+  }
 
-      <div className="w-full max-w-md bg-[#1A1D27] border border-[#2D3148] rounded-2xl shadow-2xl p-8 z-10 relative">
+  return (
+    <div className="min-h-screen bg-[#0F1117] text-gray-100 flex items-center justify-center px-4 relative overflow-hidden py-16 font-sans">
+      {/* Background radial ambient light */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-gradient-to-tr from-[#7C3AED] to-purple-800 opacity-[0.08] rounded-full blur-[120px] pointer-events-none" />
+
+      <div className="w-full max-w-md bg-[#1A1D27]/85 backdrop-blur-md border border-[#2D3148] rounded-2xl shadow-2xl p-8 z-10 relative">
         <div className="text-center mb-8">
-          <div className="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center mx-auto mb-4 text-[#7C3AED] border border-purple-500/25">
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
-          </div>
-          <h2 className="text-2xl font-bold text-white">Claim Your Resource</h2>
-          <p className="text-sm text-gray-400 mt-2">
-            Enter your details below to unlock the resource from <span className="text-[#7C3AED] font-semibold">{ownerName}</span>.
-          </p>
+          <span className="text-[#9F67FF] font-semibold text-sm tracking-wide uppercase block mb-1">
+            {ownerName} sent you something special 🎁
+          </span>
+          <h2 className="text-2xl font-extrabold text-white leading-tight">
+            {goalHeadline}
+          </h2>
         </div>
 
         <CaptureFormClient refId={refId} postId={postId} />
+
+        <div className="text-center mt-6 text-xs text-gray-500 flex items-center justify-center space-x-1">
+          <span>🔒 No spam. Unsubscribe anytime.</span>
+        </div>
       </div>
     </div>
   )
 }
+

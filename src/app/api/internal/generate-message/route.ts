@@ -17,17 +17,15 @@ You will receive a JSON object with:
 - commenter_bio: their profile bio
 - best_performing_version: current best DM template with click_rate (if any)
 
-RULES FOR PUBLIC REPLY (punch 1):
-- Max 150 characters
+RULES FOR PUBLIC REPLY (punch 1 - updated):
+- Max 200 characters
 - Must start with @{commenter_username}
-- Creates curiosity and excitement — teases that something is coming
-- Never reveal the actual content or link publicly
-- Makes OTHER readers want to comment too (FOMO)
-- Examples of good public replies:
-  "✅ @username just sent you something — check your Instagram DMs!"
-  "@username done! Just landed in your Instagram DMs 🎯"
-  "@username sent! Go check your IG DMs right now 👀"
+- Include the capture page link exactly: {CAPTURE_URL}
+- Keep it short and exciting
 - Vary the wording — never send the exact same reply twice
+- Examples of good public replies:
+  "@username here's your free guide 🎁 → {CAPTURE_URL}"
+  "@username sent! Grab it here → {CAPTURE_URL}"
 
 RULES FOR PRIVATE DM (punch 2):
 - Max 500 characters
@@ -56,6 +54,107 @@ OUTPUT FORMAT — respond with valid JSON only, no markdown, no explanation:
   "private_dm": "the private Instagram DM text here"
 }`
 
+interface GenerateEmailParams {
+  liker_username: string
+  liker_bio: string
+  comment_text: string
+  post_goal: string
+  custom_goal_text: string
+  cta_link: string
+  post_owner_name: string
+}
+
+export async function generateEmail({
+  liker_username,
+  liker_bio,
+  comment_text,
+  post_goal,
+  custom_goal_text,
+  cta_link,
+  post_owner_name
+}: GenerateEmailParams) {
+  const emailSystemPrompt = `You are an expert email copywriter. Write a short, warm, personalized email 
+to someone who just opted in after commenting on a Threads post.
+
+You will receive:
+- liker_username: their Threads username
+- liker_bio: their profile bio
+- comment_text: exactly what they commented
+- post_goal: freebie / subscribe / book_call / custom
+- custom_goal_text: only if goal is custom
+- cta_link: the main link or resource to deliver
+- post_owner_name: name of the person sending the email
+
+RULES:
+- Subject line: max 50 characters, curiosity-driven, no clickbait
+- Email body: max 150 words — short emails get read, long ones don't
+- First line must reference what they commented and feel personal
+- If their bio reveals something about them, use it in one sentence
+- Deliver the actual value immediately — link on its own line
+- Warm, human tone — like a message from a real person not a company
+- No formal greetings like "Dear" or "Hello"
+- Start with their first name only: "Hey {first name},"
+- End with post_owner_name signature
+- No unsubscribe link needed (Resend handles compliance)
+- No HTML formatting in the body text — plain text feel only
+
+OUTPUT: Valid JSON only, no markdown:
+{
+  "subject": "email subject line here",
+  "html": "full email body as plain text with line breaks as \\n"
+}`
+
+  const response = await anthropic.messages.create({
+    model: ANTHROPIC_MODEL,
+    max_tokens: 1000,
+    system: emailSystemPrompt,
+    messages: [
+      {
+        role: 'user',
+        content: JSON.stringify({
+          liker_username,
+          liker_bio,
+          comment_text,
+          post_goal,
+          custom_goal_text,
+          cta_link,
+          post_owner_name
+        })
+      }
+    ]
+  })
+
+  let messageText = ''
+  if (response.content[0].type === 'text') {
+    messageText = response.content[0].text.trim()
+  } else {
+    throw new Error('Claude response content type was not text')
+  }
+
+  let jsonOutput: { subject: string; html: string } = { subject: '', html: '' }
+  try {
+    jsonOutput = JSON.parse(messageText)
+  } catch (e) {
+    const match = messageText.match(/\{[\s\S]*\}/)
+    if (match) {
+      try {
+        jsonOutput = JSON.parse(match[0])
+      } catch (inner) {
+        console.error('Failed to parse inner JSON from Claude:', inner)
+      }
+    }
+  }
+
+  if (!jsonOutput.subject || !jsonOutput.html) {
+    // Generate fallback email
+    const subject = `Your requested resource is ready!`
+    const body = `Hey,\n\nThanks for reaching out on Threads! Here is your link:\n\n${cta_link}\n\nBest,\n${post_owner_name}`
+    return { subject, html: body }
+  }
+
+  return jsonOutput
+}
+
 export async function POST(req: NextRequest) {
   // Verify INTERNAL_API_SECRET header
   const secret = req.headers.get('x-internal-api-secret')
@@ -73,6 +172,8 @@ export async function POST(req: NextRequest) {
   const {
     postId,
     userId,
+    likerId,
+    appUrl,
     postContent,
     commentText,
     postGoal,
@@ -125,11 +226,16 @@ export async function POST(req: NextRequest) {
       best_performing_version
     }
 
+    // Replace the {CAPTURE_URL} placeholder inside the system prompt before sending to Claude
+    const computedAppUrl = appUrl || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const captureUrl = `${computedAppUrl}/capture?ref=${likerId || 'placeholder_ref'}&post=${postId}`
+    const dynamicSystemPrompt = SYSTEM_PROMPT.replace(/\{CAPTURE_URL\}/g, captureUrl)
+
     // 4. Call Claude API
     const response = await anthropic.messages.create({
       model: ANTHROPIC_MODEL,
       max_tokens: 1000,
-      system: SYSTEM_PROMPT,
+      system: dynamicSystemPrompt,
       messages: [
         {
           role: 'user',
@@ -249,3 +355,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: err.message || 'Internal Server Error' }, { status: 500 })
   }
 }
+

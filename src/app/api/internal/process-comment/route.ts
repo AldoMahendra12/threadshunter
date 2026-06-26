@@ -150,6 +150,8 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         postId,
         userId,
+        likerId: likerRow.id,
+        appUrl,
         postContent: postRow.post_content,
         commentText,
         postGoal: postRow.goal,
