@@ -17,7 +17,7 @@ export interface PaddlePlanConfig {
   priceId: string | null
   postsLimit: number
   messagesLimit: number
-  channels: ('threads_comment' | 'instagram_dm' | 'both')[]
+  channels: ('threads_reply' | 'instagram_dm' | 'both')[]
   features: string[]
 }
 
@@ -28,11 +28,11 @@ export const PADDLE_PLANS: Record<string, PaddlePlanConfig> = {
     priceId: null,
     postsLimit: 1,
     messagesLimit: 50,
-    channels: ['threads_comment'],
+    channels: ['threads_reply'],
     features: [
       '1 monitored post',
       '50 messages/month',
-      'Threads comment only',
+      'Threads reply only',
       'No AI learning'
     ]
   },
@@ -42,11 +42,11 @@ export const PADDLE_PLANS: Record<string, PaddlePlanConfig> = {
     priceId: process.env.PADDLE_STARTER_PRICE_ID || null,
     postsLimit: 5,
     messagesLimit: 500,
-    channels: ['threads_comment', 'instagram_dm', 'both'],
+    channels: ['threads_reply', 'instagram_dm', 'both'],
     features: [
       '5 monitored posts',
       '500 messages/month',
-      'Threads comment + Instagram DM',
+      'Threads reply + Instagram DM',
       'AI learning loop'
     ]
   },
@@ -56,7 +56,7 @@ export const PADDLE_PLANS: Record<string, PaddlePlanConfig> = {
     priceId: process.env.PADDLE_PRO_PRICE_ID || null,
     postsLimit: 20,
     messagesLimit: 2000,
-    channels: ['threads_comment', 'instagram_dm', 'both'],
+    channels: ['threads_reply', 'instagram_dm', 'both'],
     features: [
       '20 monitored posts',
       '2000 messages/month',
@@ -71,7 +71,7 @@ export const PADDLE_PLANS: Record<string, PaddlePlanConfig> = {
     priceId: process.env.PADDLE_SCALE_PRICE_ID || null,
     postsLimit: Infinity,
     messagesLimit: Infinity,
-    channels: ['threads_comment', 'instagram_dm', 'both'],
+    channels: ['threads_reply', 'instagram_dm', 'both'],
     features: [
       'Unlimited posts',
       'Unlimited messages',

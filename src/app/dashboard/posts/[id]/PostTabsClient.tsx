@@ -68,7 +68,7 @@ export default function PostTabsClient({ post, likers, versions, leads }: PostTa
           }`}
         >
           <Users className="w-4.5 h-4.5" />
-          <span>Likers ({likers.length})</span>
+          <span>Commenters ({likers.length})</span>
         </button>
 
         <button
@@ -96,20 +96,20 @@ export default function PostTabsClient({ post, likers, versions, leads }: PostTa
         </button>
       </div>
 
-      {/* Tab 1: Likers */}
+      {/* Tab 1: Commenters */}
       {activeTab === 'likers' && (
         <div className="bg-[#1A1D27] border border-[#2D3148] rounded-2xl overflow-hidden shadow">
           {likers.length === 0 ? (
-            <div className="text-center py-16 text-gray-500 text-sm">No likes recorded yet.</div>
+            <div className="text-center py-16 text-gray-500 text-sm">No comments recorded yet.</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-sm">
                 <thead>
                   <tr className="border-b border-[#2D3148] text-xs font-bold text-gray-400 uppercase bg-[#141721]/50">
-                    <th className="px-6 py-4">Liker Profile</th>
-                    <th className="px-6 py-4">Biography Details</th>
-                    <th className="px-6 py-4 text-center">Channels Sent</th>
-                    <th className="px-6 py-4 text-center">Sent At</th>
+                    <th className="px-6 py-4">Commenter Profile</th>
+                    <th className="px-6 py-4">Comment Text</th>
+                    <th className="px-6 py-4 text-center">Public Reply</th>
+                    <th className="px-6 py-4 text-center">Instagram DM</th>
                     <th className="px-6 py-4 text-center">Clicked</th>
                     <th className="px-6 py-4 text-center">Converted</th>
                   </tr>
@@ -117,11 +117,13 @@ export default function PostTabsClient({ post, likers, versions, leads }: PostTa
                 <tbody className="divide-y divide-[#2D3148]/55">
                   {likers.map((liker) => {
                     const messageLogs = liker.messages_sent || []
-                    const commentSent = messageLogs.some((m: any) => m.channel === 'threads_comment')
-                    const dmSent = messageLogs.some((m: any) => m.channel === 'instagram_dm')
+                    const commentSent = liker.public_reply_sent || messageLogs.some((m: any) => m.channel === 'threads_reply' || m.channel === 'threads_comment')
+                    const dmSent = liker.instagram_dm_sent || messageLogs.some((m: any) => m.channel === 'instagram_dm')
                     const wasClicked = messageLogs.some((m: any) => m.was_clicked)
                     const wasConverted = messageLogs.some((m: any) => m.was_converted)
-                    const sentAt = messageLogs[0]?.sent_at ? new Date(messageLogs[0].sent_at).toLocaleDateString() : '-'
+
+                    const isReplyEnabled = post.channel === 'both' || post.channel === 'threads_reply'
+                    const isDmEnabled = post.channel === 'both' || post.channel === 'instagram_dm'
 
                     return (
                       <tr key={liker.id} className="hover:bg-[#1f2231]/30 transition">
@@ -134,27 +136,33 @@ export default function PostTabsClient({ post, likers, versions, leads }: PostTa
                           >
                             @{liker.liker_username}
                           </a>
-                          <div className="text-[10px] text-gray-500 mt-0.5">Followers: {liker.liker_follower_count || 0}</div>
+                          <div className="text-[10px] text-gray-500 mt-0.5 font-normal">Followers: {liker.liker_follower_count || 0}</div>
                         </td>
-                        <td className="px-6 py-4 max-w-xs truncate text-gray-300" title={liker.liker_bio}>
-                          {liker.liker_bio || <span className="text-gray-600 italic">No Bio</span>}
+                        <td className="px-6 py-4 max-w-xs truncate text-gray-300 font-semibold" title={liker.comment_text}>
+                          {liker.comment_text ? `"${liker.comment_text}"` : <span className="text-gray-600 italic">No Text</span>}
                         </td>
                         <td className="px-6 py-4 text-center">
-                          <div className="flex justify-center space-x-1.5">
-                            {commentSent && (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 text-[10px] font-bold">
-                                Comment
-                              </span>
-                            )}
-                            {dmSent && (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded bg-pink-500/10 text-pink-400 text-[10px] font-bold">
-                                DM
-                              </span>
-                            )}
-                            {!commentSent && !dmSent && <span className="text-gray-600 italic">-</span>}
-                          </div>
+                          {isReplyEnabled ? (
+                            <span className={`inline-flex px-2.5 py-0.5 rounded text-[10px] font-bold ${
+                              commentSent ? 'bg-blue-500/10 text-blue-400' : 'bg-gray-700/30 text-gray-500'
+                            }`}>
+                              {commentSent ? '✅ Sent' : '⏳ Pending'}
+                            </span>
+                          ) : (
+                            <span className="text-gray-600 text-xs italic">-</span>
+                          )}
                         </td>
-                        <td className="px-6 py-4 text-center text-gray-400 text-xs">{sentAt}</td>
+                        <td className="px-6 py-4 text-center">
+                          {isDmEnabled ? (
+                            <span className={`inline-flex px-2.5 py-0.5 rounded text-[10px] font-bold ${
+                              dmSent ? 'bg-pink-500/10 text-pink-400' : 'bg-gray-700/30 text-gray-500'
+                            }`}>
+                              {dmSent ? '✅ Sent' : '⏳ Pending'}
+                            </span>
+                          ) : (
+                            <span className="text-gray-600 text-xs italic">-</span>
+                          )}
+                        </td>
                         <td className="px-6 py-4 text-center">
                           <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold ${
                             wasClicked ? 'bg-green-500/10 text-green-400' : 'bg-gray-700/30 text-gray-500'
@@ -198,9 +206,9 @@ export default function PostTabsClient({ post, likers, versions, leads }: PostTa
                   <div className="flex items-center space-x-3">
                     <span className="text-sm font-bold text-white">Version #{version.version_number}</span>
                     <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${
-                      version.channel === 'threads_comment' ? 'bg-blue-500/10 text-blue-400' : 'bg-pink-500/10 text-pink-400'
+                      (version.channel === 'threads_reply' || version.channel === 'threads_comment') ? 'bg-blue-500/10 text-blue-400' : 'bg-pink-500/10 text-pink-400'
                     }`}>
-                      {version.channel === 'threads_comment' ? 'Threads Comment' : 'Instagram DM'}
+                      {(version.channel === 'threads_reply' || version.channel === 'threads_comment') ? 'Threads Reply' : 'Instagram DM'}
                     </span>
                     {version.is_active && (
                       <span className="bg-[#22C55E]/15 text-[#22C55E] text-[10px] font-bold px-2 py-0.5 rounded">

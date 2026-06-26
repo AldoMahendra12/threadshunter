@@ -8,7 +8,8 @@ import {
   MousePointerClick, 
   Users, 
   ArrowRight, 
-  ExternalLink 
+  ExternalLink,
+  MessageSquare
 } from 'lucide-react'
 import PostActiveToggleClient from './PostActiveToggleClient'
 
@@ -23,6 +24,8 @@ export default async function DashboardOverview() {
   let totalSent = 0
   let totalLeads = 0
   let totalClicked = 0
+  let totalReplies = 0
+  let totalDms = 0
 
   try {
     const { data: { user: authUser } } = await supabase.auth.getUser()
@@ -53,11 +56,29 @@ export default async function DashboardOverview() {
       .eq('was_clicked', true)
 
     totalClicked = clickedCount || 0
+
+    // Fetch public replies count
+    const { count: replyCount } = await supabase
+      .from('messages_sent')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .eq('channel', 'threads_reply')
+
+    totalReplies = replyCount || 0
+
+    // Fetch DMs count
+    const { count: dmCount } = await supabase
+      .from('messages_sent')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .eq('channel', 'instagram_dm')
+
+    totalDms = dmCount || 0
   } catch (err) {
     console.error('Failed to load dashboard overview data:', err)
   }
 
-  const avgClickRate = totalSent > 0 ? ((totalClicked / totalSent) * 100).toFixed(1) : '0.0'
+  const avgClickRate = totalDms > 0 ? ((totalClicked / totalDms) * 100).toFixed(1) : '0.0'
 
   return (
     <div className="space-y-8">
@@ -77,48 +98,59 @@ export default async function DashboardOverview() {
       </div>
 
       {/* Metrics Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {/* Metric 1 */}
-        <div className="p-6 rounded-2xl bg-[#1A1D27] border border-[#2D3148] flex items-center space-x-4">
-          <div className="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400">
-            <Heart className="w-6 h-6" />
+        <div className="p-5 rounded-2xl bg-[#1A1D27] border border-[#2D3148] flex items-center space-x-3.5">
+          <div className="w-11 h-11 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400 shrink-0">
+            <Heart className="w-5.5 h-5.5" />
           </div>
           <div>
-            <span className="text-xs font-semibold text-gray-400 block">Total Likes Logged</span>
-            <span className="text-2xl font-bold text-white mt-1 block">{totalLikes}</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block">Comments Logged</span>
+            <span className="text-xl font-bold text-white mt-0.5 block">{totalLikes}</span>
           </div>
         </div>
 
         {/* Metric 2 */}
-        <div className="p-6 rounded-2xl bg-[#1A1D27] border border-[#2D3148] flex items-center space-x-4">
-          <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400">
-            <Send className="w-6 h-6" />
+        <div className="p-5 rounded-2xl bg-[#1A1D27] border border-[#2D3148] flex items-center space-x-3.5">
+          <div className="w-11 h-11 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 shrink-0">
+            <MessageSquare className="w-5.5 h-5.5" />
           </div>
           <div>
-            <span className="text-xs font-semibold text-gray-400 block">AI Messages Sent</span>
-            <span className="text-2xl font-bold text-white mt-1 block">{totalSent}</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block">Public Replies</span>
+            <span className="text-xl font-bold text-white mt-0.5 block">{totalReplies}</span>
           </div>
         </div>
 
         {/* Metric 3 */}
-        <div className="p-6 rounded-2xl bg-[#1A1D27] border border-[#2D3148] flex items-center space-x-4">
-          <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400">
-            <MousePointerClick className="w-6 h-6" />
+        <div className="p-5 rounded-2xl bg-[#1A1D27] border border-[#2D3148] flex items-center space-x-3.5">
+          <div className="w-11 h-11 rounded-xl bg-pink-500/10 flex items-center justify-center text-pink-400 shrink-0">
+            <Send className="w-5.5 h-5.5" />
           </div>
           <div>
-            <span className="text-xs font-semibold text-gray-400 block">Average Click Rate</span>
-            <span className="text-2xl font-bold text-emerald-400 mt-1 block">{avgClickRate}%</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block">DMs Delivered</span>
+            <span className="text-xl font-bold text-white mt-0.5 block">{totalDms}</span>
           </div>
         </div>
 
         {/* Metric 4 */}
-        <div className="p-6 rounded-2xl bg-[#1A1D27] border border-[#2D3148] flex items-center space-x-4">
-          <div className="w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-400">
-            <Users className="w-6 h-6" />
+        <div className="p-5 rounded-2xl bg-[#1A1D27] border border-[#2D3148] flex items-center space-x-3.5">
+          <div className="w-11 h-11 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 shrink-0">
+            <MousePointerClick className="w-5.5 h-5.5" />
           </div>
           <div>
-            <span className="text-xs font-semibold text-gray-400 block">Leads Captured</span>
-            <span className="text-2xl font-bold text-white mt-1 block">{totalLeads}</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block">Avg Click Rate</span>
+            <span className="text-xl font-bold text-emerald-400 mt-0.5 block">{avgClickRate}%</span>
+          </div>
+        </div>
+
+        {/* Metric 5 */}
+        <div className="p-5 rounded-2xl bg-[#1A1D27] border border-[#2D3148] flex items-center space-x-3.5">
+          <div className="w-11 h-11 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-400 shrink-0">
+            <Users className="w-5.5 h-5.5" />
+          </div>
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block">Leads Captured</span>
+            <span className="text-xl font-bold text-white mt-0.5 block">{totalLeads}</span>
           </div>
         </div>
       </div>

@@ -16,9 +16,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
 
-  const { eventId, postId, threadsPostId, likerThreadsId, userId } = body
+  const { eventId, postId, threadsPostId, likerThreadsId, userId, commentId, commentText } = body
 
-  if (!eventId || !postId || !threadsPostId || !likerThreadsId || !userId) {
+  if (!eventId || !postId || !threadsPostId || !likerThreadsId || !userId || !commentId || !commentText) {
     return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 })
   }
 
@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, message: errorMsg })
     }
 
-    // Fetch liker profile from Threads API (with retry fallback)
+    // Fetch commenter profile details from Threads API
     let likerUsername = `threads_user_${likerThreadsId.substring(0, 4)}`
     let likerBio = ''
     let likerFollowers = 0
@@ -86,26 +86,21 @@ export async function POST(req: NextRequest) {
 
     // Try fetching Instagram profile if available
     let likerInstagramId = null
-    let likerInstagramUsername = ''
     if (profile.meta_access_token) {
       try {
-        // Find matching IG user id if exposed via Threads or if we can query Meta Graph
-        // For standard setup, we can default to likerThreadsId if connected or check if there is an instagram id.
-        // We'll search if Meta returns it. Often Instagram and Threads IDs are linked.
         const igRes = await fetch(
-          `https://graph.instagram.com/v21.0/${likerThreadsId}?fields=id,username,biography&access_token=${profile.meta_access_token}`
+          `https://graph.instagram.com/v21.0/${likerThreadsId}?fields=id,username&access_token=${profile.meta_access_token}`
         )
         if (igRes.ok) {
           const igData = await igRes.json()
           likerInstagramId = igData.id
-          likerInstagramUsername = igData.username
         }
       } catch (err) {
-        // Silently catch since Instagram ID might not be linked or queried this way
+        // Silently catch
       }
     }
 
-    // Save liker to DB
+    // Save commenter to DB
     const { data: likerRow, error: likerInsertError } = await supabaseAdmin
       .from('likers')
       .insert({
@@ -117,122 +112,149 @@ export async function POST(req: NextRequest) {
         liker_bio: likerBio,
         liker_follower_count: likerFollowers,
         liker_post_count: likerThreadsCount,
-        message_sent: false
+        comment_id: commentId,
+        comment_text: commentText,
+        message_sent: false,
+        public_reply_sent: false,
+        instagram_dm_sent: false
       })
       .select()
       .single()
 
     if (likerInsertError) {
-      // If code is 23505 (unique constraint violation), we skip silently
+      // Unique constraint violation (code 23505)
       if ((likerInsertError as any).code === '23505') {
         await supabaseAdmin
           .from('webhook_events')
           .update({
             processed: true,
             processed_at: new Date().toISOString(),
-            error: 'Duplicate event (liker already processed)'
+            error: 'Duplicate event (commenter already processed)'
           })
           .eq('id', eventId)
-        return NextResponse.json({ success: true, message: 'Duplicate liked event skipped' })
+        return NextResponse.json({ success: true, message: 'Duplicate comment event skipped' })
       }
       throw likerInsertError
     }
 
-    // Determine target sending channels based on post channel & plan restrictions
-    const channelsToSend: ('threads_comment' | 'instagram_dm')[] = []
-    const allowedChannels = planConfig ? planConfig.channels : ['threads_comment']
-
-    if (postRow.channel === 'both') {
-      if (allowedChannels.includes('threads_comment')) channelsToSend.push('threads_comment')
-      if (allowedChannels.includes('instagram_dm')) {
-        // Only send IG DM if we actually have their IG ID
-        if (likerInstagramId) {
-          channelsToSend.push('instagram_dm')
-        } else {
-          // If we don't have IG ID, fallback to comment
-          if (!channelsToSend.includes('threads_comment') && allowedChannels.includes('threads_comment')) {
-            channelsToSend.push('threads_comment')
-          }
-        }
-      }
-    } else if (postRow.channel === 'threads_comment' && allowedChannels.includes('threads_comment')) {
-      channelsToSend.push('threads_comment')
-    } else if (postRow.channel === 'instagram_dm' && allowedChannels.includes('instagram_dm')) {
-      if (likerInstagramId) {
-        channelsToSend.push('instagram_dm')
-      } else if (allowedChannels.includes('threads_comment')) {
-        channelsToSend.push('threads_comment') // Fallback to comment
-      }
-    }
-
-    if (channelsToSend.length === 0) {
-      // Force comment fallback for free plan users
-      channelsToSend.push('threads_comment')
-    }
-
+    // 1. Generate BOTH messages from Claude API (one call, two outputs)
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
     const internalSecret = process.env.INTERNAL_API_SECRET || ''
 
+    const genRes = await fetch(`${appUrl}/api/internal/generate-message`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-internal-api-secret': internalSecret,
+      },
+      body: JSON.stringify({
+        postId,
+        userId,
+        postContent: postRow.post_content,
+        commentText,
+        postGoal: postRow.goal,
+        customGoalText: postRow.custom_goal_text,
+        ctaLink: postRow.cta_link,
+        likerUsername,
+        likerBio,
+        likerFollowerCount: likerFollowers
+      })
+    })
+
+    if (!genRes.ok) {
+      const errText = await genRes.text()
+      console.error('Failed to generate messages:', errText)
+      throw new Error(`Message generation failed: ${errText}`)
+    }
+
+    const { public_reply, private_dm } = await genRes.json()
+
+    // Determine target sending channels based on post channel and plan config
+    const allowedChannels = planConfig ? planConfig.channels : ['threads_reply']
+    const postChannel = postRow.channel || 'both'
+
+    let shouldSendReply = false
+    let shouldSendDm = false
+
+    if (postChannel === 'both') {
+      shouldSendReply = allowedChannels.includes('threads_reply')
+      shouldSendDm = allowedChannels.includes('instagram_dm')
+    } else if (postChannel === 'threads_reply') {
+      shouldSendReply = allowedChannels.includes('threads_reply')
+    } else if (postChannel === 'instagram_dm') {
+      shouldSendDm = allowedChannels.includes('instagram_dm')
+    }
+
+    // Fallbacks if no channels matched due to free plan limits
+    if (!shouldSendReply && !shouldSendDm) {
+      shouldSendReply = allowedChannels.includes('threads_reply')
+    }
+
+    let publicReplySentStatus = false
+    let instagramDmSentStatus = false
     let messagesSentCount = 0
 
-    // Process each channel
-    for (const channel of channelsToSend) {
-      // 1. Generate customized message from Claude API
-      const genRes = await fetch(`${appUrl}/api/internal/generate-message`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-internal-api-secret': internalSecret,
-        },
-        body: JSON.stringify({
-          postId,
-          userId,
-          postContent: postRow.post_content,
-          postGoal: postRow.goal,
-          customGoalText: postRow.custom_goal_text,
-          ctaLink: postRow.cta_link,
-          likerUsername,
-          likerBio,
-          likerFollowerCount: likerFollowers,
-          channel
-        })
-      })
-
-      if (!genRes.ok) {
-        console.error(`Failed to generate message for channel ${channel}:`, await genRes.text())
-        continue
-      }
-
-      const { message_text, version_id } = await genRes.json()
-
-      // 2. Add lead tracking code to the CTA link if available
-      // The CTA links will point to the capture page: /capture?ref={liker_id}&post={post_id}
-      // This allows us to attribute conversions to the exact liker/version!
-      const trackingCta = `${appUrl}/capture?ref=${likerRow.id}&post=${postId}`
-      const finalMessageText = message_text.replace(postRow.cta_link, trackingCta)
-
-      let sendSuccess = false
-
-      if (channel === 'threads_comment') {
-        const commentRes = await fetch(`${appUrl}/api/internal/send-threads-comment`, {
+    // PUNCH 1 — Post public Threads reply
+    if (shouldSendReply && public_reply?.text) {
+      try {
+        const replyRes = await fetch(`${appUrl}/api/internal/send-threads-reply`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'x-internal-api-secret': internalSecret,
           },
           body: JSON.stringify({
-            threads_user_id: profile.threads_user_id || profile.id, // Fallback
-            threads_post_id: threadsPostId,
-            messageText: finalMessageText,
-            meta_access_token: profile.meta_access_token
+            post_owner_threads_id: profile.threads_user_id || profile.id,
+            reply_to_id: commentId,
+            reply_text: public_reply.text,
+            access_token: profile.meta_access_token
           })
         })
-        if (commentRes.ok) {
-          sendSuccess = true
+
+        if (replyRes.ok) {
+          publicReplySentStatus = true
+          messagesSentCount++
+
+          // Save Threads Reply message log
+          await supabaseAdmin
+            .from('messages_sent')
+            .insert({
+              liker_id: likerRow.id,
+              post_id: postId,
+              user_id: userId,
+              channel: 'threads_reply',
+              message_text: public_reply.text,
+              message_version_id: public_reply.version_id,
+              was_clicked: false,
+              was_converted: false
+            })
+
+          // Increment message version times_sent
+          const { data: vObj } = await supabaseAdmin
+            .from('message_versions')
+            .select('times_sent')
+            .eq('id', public_reply.version_id)
+            .single()
+
+          await supabaseAdmin
+            .from('message_versions')
+            .update({ times_sent: (vObj?.times_sent || 0) + 1 })
+            .eq('id', public_reply.version_id)
         } else {
-          console.error('Failed to publish Threads comment:', await commentRes.text())
+          console.error('Failed to post Threads reply:', await replyRes.text())
         }
-      } else if (channel === 'instagram_dm') {
+      } catch (err) {
+        console.error('Threads reply send error:', err)
+      }
+    }
+
+    // PUNCH 2 — Send private Instagram DM
+    if (shouldSendDm && private_dm?.text) {
+      try {
+        // Add lead tracking code to the CTA link in DM
+        const trackingCta = `${appUrl}/capture?ref=${likerRow.id}&post=${postId}`
+        const finalDmText = private_dm.text.replace(postRow.cta_link, trackingCta)
+
         const dmRes = await fetch(`${appUrl}/api/internal/send-instagram-dm`, {
           method: 'POST',
           headers: {
@@ -240,59 +262,61 @@ export async function POST(req: NextRequest) {
             'x-internal-api-secret': internalSecret,
           },
           body: JSON.stringify({
-            liker_instagram_id: likerInstagramId || likerThreadsId, // Fallback
-            messageText: finalMessageText,
+            liker_instagram_id: likerInstagramId || likerThreadsId, // Fallback to threads ID if they match
+            messageText: finalDmText,
             meta_access_token: profile.meta_access_token
           })
         })
+
         if (dmRes.ok) {
-          sendSuccess = true
+          instagramDmSentStatus = true
+          messagesSentCount++
+
+          // Save Instagram DM message log
+          await supabaseAdmin
+            .from('messages_sent')
+            .insert({
+              liker_id: likerRow.id,
+              post_id: postId,
+              user_id: userId,
+              channel: 'instagram_dm',
+              message_text: finalDmText,
+              message_version_id: private_dm.version_id,
+              was_clicked: false,
+              was_converted: false
+            })
+
+          // Increment message version times_sent
+          const { data: vObj } = await supabaseAdmin
+            .from('message_versions')
+            .select('times_sent')
+            .eq('id', private_dm.version_id)
+            .single()
+
+          await supabaseAdmin
+            .from('message_versions')
+            .update({ times_sent: (vObj?.times_sent || 0) + 1 })
+            .eq('id', private_dm.version_id)
         } else {
           console.error('Failed to send Instagram DM:', await dmRes.text())
         }
-      }
-
-      if (sendSuccess) {
-        // Save to messages_sent table
-        await supabaseAdmin
-          .from('messages_sent')
-          .insert({
-            liker_id: likerRow.id,
-            post_id: postId,
-            user_id: userId,
-            channel,
-            message_text: finalMessageText,
-            message_version_id: version_id,
-            was_clicked: false,
-            was_converted: false
-          })
-
-        // Increment message_version.times_sent
-        const { data: vObj } = await supabaseAdmin
-          .from('message_versions')
-          .select('times_sent')
-          .eq('id', version_id)
-          .single()
-        
-        await supabaseAdmin
-          .from('message_versions')
-          .update({ times_sent: (vObj?.times_sent || 0) + 1 })
-          .eq('id', version_id)
-
-        messagesSentCount++
+      } catch (err) {
+        console.error('Instagram DM send error:', err)
       }
     }
 
-    if (messagesSentCount > 0) {
-      // Mark liker as message sent
-      await supabaseAdmin
-        .from('likers')
-        .update({
-          message_sent: true,
-          message_sent_at: new Date().toISOString()
-        })
-        .eq('id', likerRow.id)
+    // Update commenter's sent statuses in DB
+    await supabaseAdmin
+      .from('likers')
+      .update({
+        message_sent: publicReplySentStatus || instagramDmSentStatus,
+        message_sent_at: new Date().toISOString(),
+        public_reply_sent: publicReplySentStatus,
+        instagram_dm_sent: instagramDmSentStatus
+      })
+      .eq('id', likerRow.id)
 
+    if (messagesSentCount > 0) {
       // Update monitored_posts stats
       const { data: postStats } = await supabaseAdmin
         .from('monitored_posts')
@@ -335,7 +359,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, messagesSent: messagesSentCount })
   } catch (err: any) {
-    console.error('Process like failed:', err)
+    console.error('Process comment failed:', err)
     
     // Log error to webhook event
     await supabaseAdmin

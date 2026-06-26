@@ -57,6 +57,8 @@ export async function POST(req: NextRequest) {
   let threads_post_id = ''
   let liker_threads_id = ''
   let event_type = 'like'
+  let comment_id = ''
+  let comment_text = 'FREE'
 
   // Extract from typical Threads webhook schema
   if (payload.entry && Array.isArray(payload.entry)) {
@@ -67,10 +69,14 @@ export async function POST(req: NextRequest) {
             threads_post_id = change.value?.parent_id || ''
             liker_threads_id = change.value?.from?.id || ''
             event_type = 'reply'
+            comment_id = change.value?.id || ''
+            comment_text = change.value?.text || 'FREE'
           } else if (change.field === 'likes' || change.field === 'comments') {
             threads_post_id = change.value?.media_id || change.value?.id || ''
             liker_threads_id = change.value?.from?.id || ''
             event_type = change.field
+            comment_id = change.value?.id || ''
+            comment_text = change.value?.text || 'FREE'
           }
         }
       }
@@ -82,6 +88,12 @@ export async function POST(req: NextRequest) {
     threads_post_id = payload.threads_post_id
     liker_threads_id = payload.liker_threads_id || ''
     event_type = payload.event_type || 'like'
+    comment_id = payload.comment_id || ''
+    comment_text = payload.comment_text || 'FREE'
+  }
+
+  if (!comment_id) {
+    comment_id = `comment_${Date.now()}`
   }
 
   // 3. Log the raw event to webhook_events table immediately
@@ -149,14 +161,14 @@ export async function POST(req: NextRequest) {
       .update({
         processed: true,
         processed_at: new Date().toISOString(),
-        error: 'Duplicate liker for this post'
+        error: 'Duplicate commenter for this post'
       })
       .eq('id', eventRow.id)
-    return NextResponse.json({ success: true, message: 'Skipped: duplicate like' })
+    return NextResponse.json({ success: true, message: 'Skipped: duplicate comment' })
   }
 
-  // 6. Trigger /api/internal/process-like asynchronously
-  const processUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/internal/process-like`
+  // 6. Trigger /api/internal/process-comment asynchronously
+  const processUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/internal/process-comment`
   const internalSecret = process.env.INTERNAL_API_SECRET || ''
 
   try {
@@ -172,6 +184,8 @@ export async function POST(req: NextRequest) {
         threadsPostId: threads_post_id,
         likerThreadsId: liker_threads_id,
         userId: postRow.user_id,
+        commentId: comment_id,
+        commentText: comment_text
       }),
       signal: AbortSignal.timeout(1), // Abort immediately to run asynchronously
     }).catch(() => {

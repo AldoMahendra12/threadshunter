@@ -16,7 +16,7 @@ export default function NewPostFormClient({ userPlan, metaAccessToken }: FormPro
   const [goal, setGoal] = useState<'freebie' | 'subscribe' | 'book_call' | 'custom'>('freebie')
   const [customGoalText, setCustomGoalText] = useState('')
   const [ctaLink, setCtaLink] = useState('')
-  const [channel, setChannel] = useState<'threads_comment' | 'instagram_dm' | 'both'>('threads_comment')
+  const [channel, setChannel] = useState<'threads_reply' | 'instagram_dm' | 'both'>('both')
   const [loading, setLoading] = useState(false)
 
   // Helper to extract post ID from Threads URL
@@ -77,7 +77,7 @@ export default function NewPostFormClient({ userPlan, metaAccessToken }: FormPro
           goal,
           custom_goal_text: goal === 'custom' ? customGoalText : null,
           cta_link: ctaLink.trim(),
-          channel: userPlan === 'free' ? 'threads_comment' : channel, // Enforce comment-only for free tier
+          channel: userPlan === 'free' ? 'threads_reply' : channel, // Enforce reply-only for free tier
           is_active: true
         })
 
@@ -178,9 +178,9 @@ export default function NewPostFormClient({ userPlan, metaAccessToken }: FormPro
             onChange={(e) => setChannel(e.target.value as any)}
             className="w-full bg-[#131620] border border-[#2D3148] rounded-xl px-4 py-3 text-sm text-gray-200 focus:outline-none focus:border-[#7C3AED] transition"
           >
-            <option value="threads_comment">Threads Comment Reply Only</option>
-            <option value="instagram_dm">Instagram Direct Message (DM) Only</option>
-            <option value="both">Both Threads Comment + Instagram DM</option>
+            <option value="both">Both (Public Reply + Instagram DM) ← Recommended</option>
+            <option value="threads_reply">Public Threads Reply Only</option>
+            <option value="instagram_dm">Private Instagram DM Only</option>
           </select>
         )}
       </div>
